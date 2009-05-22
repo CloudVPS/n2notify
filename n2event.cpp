@@ -14,6 +14,14 @@ public:
 	
 	int main (void)
 	{
+		pid_t p = fork();
+		if (p<0) return 1;
+		if (p>0) return 0;
+		
+		fin.close ();
+		fout.close ();
+		ferr.close ();
+		
 		if (argv["*"].count() < 2)
 		{
 			ferr.writeln ("Usage: n2event <objectid> <problem|recovery>");
@@ -27,7 +35,6 @@ public:
 					 "/%s/%s" %format (ntype, id);
 		
 		httpsocket ht;
-		fout.writeln (ht.get (url));
 		return 0;
 	}
 };
