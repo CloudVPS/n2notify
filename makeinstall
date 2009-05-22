@@ -1,0 +1,20 @@
+#!/bin/sh
+. configure.paths
+
+install -m 755 n2notify $CONFIG_BINPATH/n2notify
+
+if [ `whoami` = "root" ]; then
+  etcpath=/etc
+else
+  if [ -d "${HOME}/.etc" ]; then
+    etcpath="${HOME}/.etc"
+  else
+    mkdir -p "${HOME}/etc"
+    etcpath="${HOME}/etc"
+  fi
+  mkdir -p "${HOME}/var/run"
+fi
+
+if [ ! -e "${etcpath}/n2notify.conf" ]; then
+  cp rsrc/n2notify.conf "$etcpath"/n2notify.conf
+fi
