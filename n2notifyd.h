@@ -6,7 +6,7 @@
 
 // The amount of seconds notfication states should be stable before
 // anything is sent out.
-#define NOTIFICATION_THRESHOLD 120
+#define NOTIFICATION_THRESHOLD 91
 
 enum NotificationType {
 	NOTIFY_PROBLEM,

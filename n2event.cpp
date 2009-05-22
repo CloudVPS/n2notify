@@ -35,6 +35,7 @@ public:
 					 "/%s/%s" %format (ntype, id);
 		
 		httpsocket ht;
+		string res = ht.get (url);
 		return 0;
 	}
 };
