@@ -39,7 +39,7 @@ int n2notifydApp::main (void)
 
 	while (true)
 	{
-		ev = waitevent ();
+		value ev = waitevent ();
 		if (ev.type() == "shutdown") break;
 	}
 
