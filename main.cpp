@@ -31,7 +31,7 @@ int n2notifydApp::main (void)
 	addlogtarget (log::file, "/var/log/n2/n2notifyd-event.log", log::all);
 	daemonize ();
 	
-	log::write (log::info, "Started");
+	log::write (log::info, "main", "Started");
 	srv.listento ("/var/state/n2/notify.socket");
 	new NotifyHandler (this);
 	srv.start ();
