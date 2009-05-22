@@ -375,5 +375,6 @@ int NotifyHandler::run (string &uri, string &postbody, value &inhdr,
 			return 500;
 	}
 	
+	out = "OK";
 	return 200;
 }
