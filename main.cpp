@@ -494,7 +494,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 			}
 		}
 		
-		int cpu = hstat["percentcpu"];
+		int cpu = hstat["cpu"];
 		if (cpu<0) cpu = 0;
 		if (cpu>100) cpu = 100;
 		into["cpuwidth"] = cpu;
