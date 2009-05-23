@@ -278,7 +278,9 @@ void NotificationThread::run (void)
 		value ev = waitevent (15000);
 		if (ev.type() == "statuschange")
 		{
-			log::write (log::info, "nthread", "Status change: %J" %format (ev));
+			log::write (log::info, "nthread",
+						"Status change: %s" %format (ev.join("/")));
+						
 			statstring target = ev["target"];
 			statstring objectid = ev["objectid"];
 			string state = ev["state"];
@@ -297,7 +299,8 @@ void NotificationThread::run (void)
 			value n = t.harvestChanges ();
 			if (n.count())
 			{
-				log::write (log::info, "nthread", "Notify: %J" %format (n));
+				log::write (log::info, "nthread",
+							"Notify <%s>: %J" %format (t.id(), n));
 				dispatch.sendNotification (t.id(), n);
 			}
 		}
@@ -547,9 +550,16 @@ bool MailtoProtocol::sendNotification (const string &url,
 	
 	log::write (log::info, "mailto", "Sending mail to <%s>" %format (addr));
 	
-	smtp.sendmessage (addr, "[N2] PROBLEM:%i RECOVERY:%i <%s>"
-					  %format (numproblems,numrecoveries,senv["date"]),
-					  message);
+	string subject = "[N2]";
+	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
+	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
+	subject.strcat (senv["date"]);
+	
+	if (! smtp.sendmessage (addr, subject, message))
+	{
+		log::write (log::error, "mailto",
+					"Error sending mail: %s" %format (smtp.error()));
+	}
 }
 
 // ==========================================================================
