@@ -37,6 +37,7 @@ int n2notifydApp::main (void)
 	
 	fs.rm (sockpath);
 	srv.listento (sockpath);
+	fs.chown (sockpath, "n2", "n2");
 	new NotifyHandler (this);
 	srv.start ();
 	notificationThread.spawn ();
