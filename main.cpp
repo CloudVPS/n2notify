@@ -484,6 +484,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 		else numrecoveries++;
 		
 		value &into = senv["problems"][p.id()];
+		
 		hstat = N2Util::getHostStats (p.id());
 		
 		foreach (v, hstat)
@@ -512,6 +513,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 		if (cpu>100) cpu = 100;
 		into["cpuwidth"] = cpu;
 		into["restwidth"] = 100 - cpu;
+		into["label"] = N2Util::resolveLabel (p.id());
 	}
 	
 	timestamp tnow = core.time.now ();
@@ -562,5 +564,46 @@ value *N2Util::getHostStats (const string &id)
 	
 	string debugfn = "debug-%s.xml" %format (id);
 	res.savexml (debugfn);
+	return &res;
+}
+
+string *N2Util::resolveLabel (const statstring &id)
+{
+	returnclass (string) res retain;
+	
+	file f("/var/state/n2/n2labels");
+	value slabels;
+	foreach (line,f)
+	{
+		value v = strutil::split (line, ':');
+		slabels[v[0].sval()] = v[1];
+	}
+	
+	if (slabels.exists (id))
+	{
+		res = slabels[id];
+		return &res;
+	}
+	
+	if (! fs.exists ("/usr/bin/n2resolve"))
+	{
+		res = id;
+		return &res;
+	}
+	
+	string cmd = "/usr/bin/n2resolve %s" %format (id);
+	try
+	{
+		systemprocess P(cmd);
+		P.run();
+		res = P.gets();
+		P.close();
+		P.serialize();
+	}
+	catch (exception e)
+	{
+	}
+	
+	if (! res) res = id;
 	return &res;
 }

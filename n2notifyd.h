@@ -208,6 +208,7 @@ class N2Util
 public:
 	static value		*getHostStats (const string &id);
 	static value		*getSchemaXML (void);
+	static string		*resolveLabel (const statstring &id);
 };
 
 #endif
