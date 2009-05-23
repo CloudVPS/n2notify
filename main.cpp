@@ -553,7 +553,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 	string subject = "[N2]";
 	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
 	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
-	subject.strcat (senv["date"]);
+	subject.strcat (" <%s>" %format (senv["date"]));
 	
 	if (! smtp.sendmessage (addr, subject, message))
 	{
