@@ -245,8 +245,10 @@ value *NotificationTarget::harvestChanges (void)
 // ==========================================================================
 // CONSTRUCTOR NotificationThread
 // ==========================================================================
-NotificationThread::NotificationThread (void) : thread ("notification")
+NotificationThread::NotificationThread (void)
+	: thread ("notification")
 {
+	new MailtoProtocol (dispatch);
 }
 
 // ==========================================================================
@@ -290,6 +292,7 @@ void NotificationThread::run (void)
 			if (n.count())
 			{
 				log::write (log::info, "nthread", "Notify: %J" %format (n));
+				dispatch.sendNotification (t.id(), n);
 			}
 		}
 	}
@@ -377,4 +380,161 @@ int NotifyHandler::run (string &uri, string &postbody, value &inhdr,
 	
 	out = "OK";
 	return 200;
+}
+
+// ==========================================================================
+// CONSTRUCTOR NotificationProtocol
+// ==========================================================================
+NotificationProtocol::NotificationProtocol (void) : dispatch ((Dispatcher&) *(new Dispatcher))
+{
+	throw (defaultConstructorException());
+}
+
+NotificationProtocol::NotificationProtocol (Dispatcher &d) : dispatch(d)
+{
+}
+
+// ==========================================================================
+// DESTRUCTOR NotificationProtocol
+// ==========================================================================
+NotificationProtocol::~NotificationProtocol (void)
+{
+}
+
+// ==========================================================================
+// METHOD NotificationProtocol::sendNotification
+// ==========================================================================
+bool NotificationProtocol::sendNotification (const string &url,
+											 const value &problems)
+{
+	log::write (log::error, "dispatch", "Protocol error: unimplemented");
+	return false;
+}
+
+// ==========================================================================
+// CONSTRUCTOR Dispatcher
+// ==========================================================================
+Dispatcher::Dispatcher (void)
+{
+}
+
+// ==========================================================================
+// DESTRUCTOR Dispatcher
+// ==========================================================================
+Dispatcher::~Dispatcher (void)
+{
+}
+
+// ==========================================================================
+// METHOD Dispatcher::sendNotification
+// ==========================================================================
+bool Dispatcher::sendNotification (const string &url, const value &problems)
+{
+	statstring proto = url.copyuntil (':');
+	if (! protocols.exists (proto))
+	{
+		log::write (log::error, "dispatch", "Unimplemented protocol "
+					"'%s'" %format (proto));
+		return false;
+	}
+	
+	return protocols[proto].sendNotification (url, problems);
+}
+
+// ==========================================================================
+// CONSTRUCTOR MailtoProtocol
+// ==========================================================================
+MailtoProtocol::MailtoProtocol (Dispatcher &d)
+	: NotificationProtocol (d)
+{
+	dispatch.protocols.set ("mailto", this);
+}
+
+// ==========================================================================
+// DESTRUCTOR MailtoProtocol
+// ==========================================================================
+MailtoProtocol::~MailtoProtocol (void)
+{
+}
+
+// ==========================================================================
+// METHOD MailtoProtocol::sendNotification
+// ==========================================================================
+bool MailtoProtocol::sendNotification (const string &url,
+									 const value &problems)
+{
+	string addr=url.copyafter(':');
+	scriptparser scr;
+	string tmpl = fs.load ("mailmessage.tmpl");
+	scr.build (tmpl);
+	value senv;
+	value hstat;
+	
+	int numproblems = 0;
+	int numrecoveries = 0;
+	
+	foreach (p, problems)
+	{
+		if (p.sval() == "PROBLEM") numproblems++;
+		else numrecoveries++;
+		
+		value &into = senv["problems"][p.id()];
+		hstat = N2Util::getHostStats (p.id());
+		
+		foreach (v, hstat)
+		{
+			if (v.count() == 0)
+			{
+				into[v.id()] = v;
+			}
+		}
+		
+		int cpu = hstat["percentcpu"];
+		if (cpu<0) cpu = 0;
+		if (cpu>100) cpu = 100;
+		into["cpuwidth"] = cpu;
+		into["restwidth"] = 100 - cpu;
+	}
+	
+	senv["numproblems"] = numproblems;
+	senv["numrecoveries"] = numrecoveries;
+	senv["mailto"] = addr;
+	
+	string message;
+	scr.run (senv, message, "main");
+	
+	fs.save ("message.dat", message);
+	
+	string cmd = "/usr/lib/sendmail -t";
+	systemprocess P(cmd);
+	P.run ();
+	P.puts (message);
+	P.close ();
+	P.serialize ();
+}
+
+// ==========================================================================
+// STATIC METHOD N2Util::getHostStats
+// ==========================================================================
+value *N2Util::getHostStats (const string &id)
+{
+	returnclass (value) res retain;
+	static value schemaxml = N2Util::getSchemaXML ();
+	xmlschema schema;
+	string resxml;
+	
+	schema.schema = schemaxml;
+	
+	string cmd = "/usr/bin/n2hstat -x %s" %format (id);
+	systemprocess P(cmd);
+	P.run ();
+	while (! P.eof())
+	{
+		resxml.strcat (P.read (4096));
+	}
+	P.close ();
+	P.serialize ();
+	
+	res.fromxml (resxml, schema);
+	return &res;
 }

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml.schema>
+  <xml.class name="host">
+    <xml.type>dict</xml.type>
+    <xml.proplist>
+      <xml.member class="hostname" id="hostname" type="string"/>
+      <xml.member class="status" id="status" type="string"/>
+      <xml.member class="flags" id="flags" type="dict"/>
+      <xml.member class="uptime" id="uptime" type="integer"/>
+      <xml.member class="os" id="os" type="string"/>
+      <xml.member class="hardware" id="hardware" type="string"/>
+      <xml.member class="services" id="services" />
+      <xml.member class="loadavg" id="loadavg" type="string"/>
+      <xml.member class="percentcpu" id="cpu" type="string"/>
+      <xml.member class="processcount" id="processcount" type="integer"/>
+      <xml.member class="mbfreeram" id="ram" type="string"/>
+      <xml.member class="mbfreeswap" id="swap" type="string"/>
+      <xml.member class="netin" id="netin" type="integer"/>
+      <xml.member class="netout" id="netout" type="integer"/>
+      <xml.member class="diskio" id="diskio" type="integer"/>
+      <xml.member class="rtt" id="rtt" type="string"/>
+      <xml.member class="packetloss" id="loss" type="string"/>
+      <xml.member class="mounts" id="mounts"/>
+      <xml.member class="processes" id="processes"/>
+      <xml.member class="ports" id="ports"/>
+      <xml.member class="ttys" id="ttys"/>
+      <xml.member class="http" id="http"/>
+      <xml.member class="xenvps" id="xenvps"/>
+      <xml.member class="events" id="events"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="flags">
+    <xml.type>dict</xml.type>
+    <xml.proplist>
+      <xml.member class="rtt" id="rtt" type="integer"/>
+      <xml.member class="loss" id="loss" type="integer"/>
+      <xml.member class="load" id="load" type="integer"/>
+      <xml.member class="other" id="other" type="integer"/>
+	  <xml.member class="ram" id="ram" type="integer"/>
+	  <xml.member class="swap" id="swap" type="integer"/>
+	  <xml.member class="netin" id="netin" type="integer"/>
+	  <xml.member class="netout" id="netout" type="integer"/>
+	  <xml.member class="svcdown" id="svcdown" type="integer"/>
+	  <xml.member class="diskio" id="diskio" type="integer"/>
+	</xml.proplist>
+  </xml.class>
+  
+  <xml.class name="services">
+    <xml.type>array</xml.type>
+    <xml.proplist>
+      <xml.member class="service"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="service">
+    <xml.type>string</xml.type>
+  </xml.class>
+  
+  <xml.class name="mounts">
+    <xml.type>array</xml.type>
+	<xml.proplist>
+	  <xml.member class="mount"/>
+	</xml.proplist>
+  </xml.class>
+  
+  <xml.class name="mount">
+    <xml.type>string</xml.type>
+    <xml.attributes>
+      <xml.attribute label="fstype"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="usage"><xml.type>integer</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+  
+  <xml.class name="processes">
+    <xml.type>dict</xml.type>
+    <xml.proplist>
+      <xml.member class="process"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="process">
+    <xml.type>string</xml.type>
+    <xml.attributes>
+      <xml.attribute label="id" mandatory="true" isindex="true"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="user"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="usage"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="memusage"><xml.type>string</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+  
+  <xml.class name="xenvps">
+    <xml.type>dict</xml.type>
+    <xml.proplist>
+      <xml.member class="vps"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="vps">
+    <xml.type>void</xml.type>
+    <xml.attributes>
+      <xml.attribute label="id" mandatory="true" isindex="true"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="cpu"><xml.type>float</xml.type></xml.attribute>
+      <xml.attribute label="mem"><xml.type>integer</xml.type></xml.attribute>
+      <xml.attribute label="ncpu"><xml.type>integer</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+  
+  <xml.class name="ports">
+    <xml.type>dict</xml.type>
+    <xml.proplist>
+      <xml.member class="port"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="port">
+    <xml.type>void</xml.type>
+    <xml.attributes>
+      <xml.attribute label="num" mandatory="true" isindex="true"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="connected"><xml.type>integer</xml.type></xml.attribute>
+      <xml.attribute label="other"><xml.type>integer</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+  
+  <xml.class name="ttys">
+    <xml.type>dict</xml.type>
+    <xml.proplist>
+      <xml.member class="tty"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="tty">
+    <xml.type>void</xml.type>
+    <xml.attributes>
+      <xml.attribute label="line" mandatory="true" isindex="true"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="username"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="host"><xml.type>string</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+  
+  <xml.class name="http">
+    <xml.type>array</xml.type>
+    <xml.proplist>
+      <xml.member class="vhost"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="vhost">
+    <xml.type>integer</xml.type>
+    <xml.attributes>
+      <xml.attribute label="id"><xml.type>string</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+  
+  <xml.class name="events">
+    <xml.type>array</xml.type>
+    <xml.proplist>
+      <xml.member class="event"/>
+    </xml.proplist>
+  </xml.class>
+  
+  <xml.class name="event">
+    <xml.type>string</xml.type>
+    <xml.attributes>
+      <xml.attribute label="ts"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="oldstatus"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="newstatus"><xml.type>string</xml.type></xml.attribute>
+      <xml.attribute label="flagged"><xml.type>string</xml.type></xml.attribute>
+    </xml.attributes>
+  </xml.class>
+
+</xml.schema>

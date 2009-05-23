@@ -13,20 +13,71 @@ enum NotificationType {
 	NOTIFY_RECOVERY
 };
 
+class Dispatcher;
+
+//  -------------------------------------------------------------------------
+/// Abstract class implementing a specific protocol in the uri-scheme
+/// used for notification targets.
+//  -------------------------------------------------------------------------
+class NotificationProtocol
+{
+public:
+						 NotificationProtocol (void);
+						 NotificationProtocol (Dispatcher &d);
+						~NotificationProtocol (void);
+						
+	virtual bool		 sendNotification (const string &url,
+										   const value &problems);
+
+protected:
+	Dispatcher			&dispatch;
+};
+
+typedef dictionary<NotificationProtocol> ProtocolDict;
+
+//  -------------------------------------------------------------------------
+/// Collection class for NotificationProtocol instances.
+//  -------------------------------------------------------------------------
+class Dispatcher
+{
+public:
+						 Dispatcher (void);
+						~Dispatcher (void);
+						
+	bool				 sendNotification (const string &url,
+						 				   const value &problems);
+						 				   
+	ProtocolDict		 protocols;
+};
+
+//  -------------------------------------------------------------------------
+/// Implementation of the mailto: protocol.
+//  -------------------------------------------------------------------------
+class MailtoProtocol : public NotificationProtocol
+{
+public:
+						 MailtoProtocol (Dispatcher &d);
+						~MailtoProtocol (void);
+						
+	bool				 sendNotification (const string &url,
+						 				   const value &problems);
+};
+
 //  -------------------------------------------------------------------------
 /// Thread handling the action
 //  -------------------------------------------------------------------------
 class NotificationThread : public thread
 {
 public:
-					 NotificationThread (void);
-					~NotificationThread (void);
-					
-	void			 run (void);
-	void			 statusChange (const statstring &target,
-								   const statstring &objectd,
-								   NotificationType t);
+						 NotificationThread (void);
+						~NotificationThread (void);
+						
+	void				 run (void);
+	void				 statusChange (const statstring &target,
+									   const statstring &objectd,
+									   NotificationType t);
 	
+	Dispatcher			 dispatch;
 };
 
 //  -------------------------------------------------------------------------
@@ -146,7 +197,17 @@ public:
 							  tcpsocket &s);
 
 protected:
-	n2notifydApp			&app;
+	n2notifydApp		&app;
+};
+
+//  -------------------------------------------------------------------------
+/// Utility class for interacting with N2
+//  -------------------------------------------------------------------------
+class N2Util
+{
+public:
+	static value		*getHostStats (const string &id);
+	static value		*getSchemaXML (void);
 };
 
 #endif
