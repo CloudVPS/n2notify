@@ -10,7 +10,8 @@ $version (1.0.3);
 // ==========================================================================
 n2notifydApp::n2notifydApp (void)
 	: daemon ("net.xl-is.svc.n2notifyd"),
-	  conf (this)
+	  conf (this),
+	  notificationThread (this)
 {
 	opt = $("-h", $("long", "--help"));
 }
@@ -28,17 +29,27 @@ n2notifydApp::~n2notifydApp (void)
 int n2notifydApp::main (void)
 {
 	string conferr; ///< Error return from configuration class.
+	string confpath = "/etc/n2/n2notify.conf";
+	if (! fs.exists (confpath)) confpath = "n2notify.conf";
 	
-	addlogtarget (log::file, "/var/log/n2/n2notifyd-event.log", log::all);
+	if (! conf.loadini (confpath, conferr))
+	{
+		ferr.writeln ("%% Error loading configuration: %s" %format (conferr));
+		return 1;
+	}
+	
+	addlogtarget (log::file, conf["system"]["eventlog"], log::all);
+
+	string sockpath = "/var/state/n2/notify.socket";
+	fs.rm (sockpath);
+	srv.listento (sockpath);
+	fs.chown (sockpath, "n2", "n2");
+	settargetuser ("n2");
 	daemonize ();
 	
 	log::write (log::info, "main", "Started");
 	
-	string sockpath = "/var/state/n2/notify.socket";
 	
-	fs.rm (sockpath);
-	srv.listento (sockpath);
-	fs.chown (sockpath, "n2", "n2");
 	new NotifyHandler (this);
 	srv.start ();
 	notificationThread.spawn ();
@@ -251,10 +262,11 @@ value *NotificationTarget::harvestChanges (void)
 // ==========================================================================
 // CONSTRUCTOR NotificationThread
 // ==========================================================================
-NotificationThread::NotificationThread (void)
+NotificationThread::NotificationThread (n2notifydApp *app)
 	: thread ("notification")
 {
-	new MailtoProtocol (dispatch);
+	new MailtoProtocol (dispatch, app->conf["system"]["mailfrom"],
+						app->conf["system"]["mailname"]);
 }
 
 // ==========================================================================
@@ -453,8 +465,9 @@ bool Dispatcher::sendNotification (const string &url, const value &problems)
 // ==========================================================================
 // CONSTRUCTOR MailtoProtocol
 // ==========================================================================
-MailtoProtocol::MailtoProtocol (Dispatcher &d)
-	: NotificationProtocol (d)
+MailtoProtocol::MailtoProtocol (Dispatcher &d, const string &mf,
+								const string &mn)
+	: NotificationProtocol (d), _mailfrom (mf), _mailname (mn)
 {
 	dispatch.protocols.set ("mailto", this);
 }
@@ -474,23 +487,40 @@ bool MailtoProtocol::sendNotification (const string &url,
 {
 	string addr=url.copyafter(':');
 	scriptparser scr;
-	string tmpl = fs.load ("mailmessage.tmpl");
+	string tmpl;
 	scr.build (tmpl);
 	value senv;
 	value hstat;
 	
+	if (fs.exists ("/etc/n2/mailmessage.tmpl"))
+	{
+		tmpl = fs.load ("mailmessage.tmpl");
+	}
+	else if (fs.exists ("/etc/n2/mailmessage-default.tmpl"))
+	{
+		tmpl = fs.load ("/etc/n2/mailmessage-default.tmpl");
+	}
+	else if (fs.exists ("mailmessage.tmpl"))
+	{
+		tmpl = fs.load ("mailmessage.tmpl");
+	}
+	
 	int numproblems = 0;
 	int numrecoveries = 0;
 	
+	// go over the reported events
 	foreach (p, problems)
 	{
 		if (p.sval() == "PROBLEM") numproblems++;
 		else numrecoveries++;
 		
+		// Reference to the insertion point
 		value &into = senv["problems"][p.id()];
 		
+		// Call n2hstat
 		hstat = N2Util::getHostStats (p.id());
 		
+		// Copy all non-array values
 		foreach (v, hstat)
 		{
 			if (v.count() == 0)
@@ -499,6 +529,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 			}
 		}
 		
+		// Get a list of all active flags
 		value flags;
 		foreach (fl, hstat["flags"])
 		{
@@ -508,39 +539,47 @@ bool MailtoProtocol::sendNotification (const string &url,
 			}
 		}
 
+		// Create $flags$
 		if (flags.count())
 		{
 			into["flags"] = "(%s)" %format (flags.join (","));
 		}
+		
+		// Calculate width for CPU usage meter
 		int cpu = hstat["cpu"];
 		if (cpu<0) cpu = 0;
 		if (cpu>100) cpu = 100;
 		into["cpuwidth"] = cpu;
 		into["restwidth"] = 100 - cpu;
+		
+		// Resolve the host label
 		into["label"] = N2Util::resolveLabel (p.id());
 	}
 	
-	log::write (log::info, "mailto", "Message metadata gathered");
-	
+	// Some extra parameters
 	timestamp tnow = core.time.now ();
 	senv["date"] = tnow.format ("%Y-%m-%d %H:%M");
 	senv["numproblems"] = numproblems;
 	senv["numrecoveries"] = numrecoveries;
 	senv["mailto"] = addr;
 	
+	// Create the mime-separator
 	string mimefield = strutil::uuid();
 	mimefield = mimefield.filter ("0123456789abcdef");
 	mimefield = "=_%s" %format (mimefield);
 	senv["mimefield"] = mimefield;
 	
+	// Generate the mail message from the template.
 	string message;
 	scr.run (senv, message, "main");
 	
-	log::write (log::info, "mailto", "Script ran output=%i"
-								%format (message.strlen()));
+	// Create the subject	
+	string subject = "[N2]";
+	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
+	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
+	subject.strcat (" <%s>" %format (senv["date"]));
 	
-	fs.save ("message.dat", message);
-	
+	// Mail the message
 	smtpsocket smtp;
 	smtp.setsmtphost ("localhost");
 	smtp.setsender ("support@xlshosting.com", "N2 Monitoring");
@@ -549,11 +588,6 @@ bool MailtoProtocol::sendNotification (const string &url,
 					%format (mimefield));
 	
 	log::write (log::info, "mailto", "Sending mail to <%s>" %format (addr));
-	
-	string subject = "[N2]";
-	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
-	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
-	subject.strcat (" <%s>" %format (senv["date"]));
 	
 	if (! smtp.sendmessage (addr, subject, message))
 	{
@@ -571,8 +605,6 @@ value *N2Util::getHostStats (const string &id)
 	static value schemaxml = N2Util::getSchemaXML ();
 	xmlschema schema;
 	string resxml;
-	
-	schemaxml.savexml ("debug-schema.xml");
 	
 	log::write (log::info, "n2util", "Getting hstat for <%s>" %format (id));
 	schema.schema = schemaxml;
@@ -600,6 +632,9 @@ value *N2Util::getHostStats (const string &id)
 	return &res;
 }
 
+// ==========================================================================
+// STATIC METHOD N2Util::resolveLabel
+// ==========================================================================
 string *N2Util::resolveLabel (const statstring &id)
 {
 	returnclass (string) res retain;

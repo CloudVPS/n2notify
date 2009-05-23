@@ -22,15 +22,26 @@ class Dispatcher;
 class NotificationProtocol
 {
 public:
+						 /// Default constructor. Throws an exception.
 						 NotificationProtocol (void);
+						 
+						 /// Constructor. 
+						 /// \param d Parent-dispatcher.
 						 NotificationProtocol (Dispatcher &d);
 						~NotificationProtocol (void);
 						
+						 /// Virtual handler method.
+						 /// \param url The notification-url
+						 /// \param problems A dictionary of events
+						 ///                 keyed by address. Each item
+						 ///                 has a value of either
+						 ///                 PROBLEM or RECOVERY.
+						 /// \return True on succes.
 	virtual bool		 sendNotification (const string &url,
 										   const value &problems);
 
 protected:
-	Dispatcher			&dispatch;
+	Dispatcher			&dispatch; ///< Link back to parent dispatcher.
 };
 
 typedef dictionary<NotificationProtocol> ProtocolDict;
@@ -41,9 +52,20 @@ typedef dictionary<NotificationProtocol> ProtocolDict;
 class Dispatcher
 {
 public:
+						 /// Constructor.
 						 Dispatcher (void);
+						 
+						 /// Destructor.
 						~Dispatcher (void);
 						
+						 /// Send out a notification through
+						 /// the apropriate protocol-handler.
+						 /// \param url The notification-url
+						 /// \param problems A dictionary of events
+						 ///                 keyed by address. Each item
+						 ///                 has a value of either
+						 ///                 PROBLEM or RECOVERY.
+						 /// \return True on succes.
 	bool				 sendNotification (const string &url,
 						 				   const value &problems);
 						 				   
@@ -56,11 +78,24 @@ public:
 class MailtoProtocol : public NotificationProtocol
 {
 public:
-						 MailtoProtocol (Dispatcher &d);
+						 /// Constructor.
+						 /// Adds the protocol to the dispatcher.
+						 /// \param d Parent dispatcher
+						 /// \param mf The message's source email address.
+						 /// \param mn The message's source name.
+						 MailtoProtocol (Dispatcher &d, const string &mf,
+						 				 const string &mn);
+						 
+						 /// Destructor.
 						~MailtoProtocol (void);
 						
+						 /// Implementation.
 	bool				 sendNotification (const string &url,
 						 				   const value &problems);
+
+protected:
+	string				_mailfrom;
+	string				_mailname;
 };
 
 //  -------------------------------------------------------------------------
@@ -69,7 +104,7 @@ public:
 class NotificationThread : public thread
 {
 public:
-						 NotificationThread (void);
+						 NotificationThread (class n2notifydApp *);
 						~NotificationThread (void);
 						
 	void				 run (void);
@@ -83,7 +118,7 @@ public:
 //  -------------------------------------------------------------------------
 /// Implementation template for application config.
 //  -------------------------------------------------------------------------
-typedef configdb<class n2notifydApp> appconfig;
+typedef configdb<class n2notifydApp> AppConfig;
 
 //  -------------------------------------------------------------------------
 /// Main daemon class.
@@ -96,7 +131,7 @@ public:
 		 	
 	int					 main (void);
 	httpd				 srv;
-	appconfig			 conf;
+	AppConfig			 conf;
 	NotificationThread	 notificationThread;
 
 protected:
