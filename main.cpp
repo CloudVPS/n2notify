@@ -1,5 +1,6 @@
 #include "n2notifyd.h"
 #include <grace/process.h>
+#include <grace/smtp.h>
 
 $appobject (n2notifydApp);
 $version (1.0.3);
@@ -522,17 +523,28 @@ bool MailtoProtocol::sendNotification (const string &url,
 	senv["numrecoveries"] = numrecoveries;
 	senv["mailto"] = addr;
 	
+	string mimefield = strutil::uuid();
+	mimefield = mimefield.filter ("0123456789abcdef");
+	mimefield = "=_%s" %format (mimefield);
+	senv["mimefield"] = mimefield;
+	
 	string message;
 	scr.run (senv, message, "main");
 	
 	fs.save ("message.dat", message);
 	
-	string cmd = "/usr/lib/sendmail -t";
-	systemprocess P(cmd);
-	P.run ();
-	P.puts (message);
-	P.close ();
-	P.serialize ();
+	smtpsocket smtp;
+	smtp.setsmtphost ("localhost");
+	smtp.setsender ("support@xlshosting.com", "N2 Monitoring");
+	smtp.setheader ("MIME-Version", "1.0");
+	smtp.setheader ("Content-type", "multipart/related; boundary=\"%s\""
+					%format (mimefield));
+	
+	log::write (log::info, "mailto", "Sending mail to <%s>" %format (addr));
+	
+	smtp.sendmessage (addr, "[N2] PROBLEM:%i RECOVERY:%i <%s>"
+					  %format (numproblems,numrecoveries,senv["date"]),
+					  message);
 }
 
 // ==========================================================================
@@ -576,7 +588,7 @@ string *N2Util::resolveLabel (const statstring &id)
 	foreach (line,f)
 	{
 		value v = strutil::split (line, ':');
-		slabels[v[0].sval()] = v[1];
+		slabels[v[1].sval()] = v[0];
 	}
 	
 	if (slabels.exists (id))
