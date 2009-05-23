@@ -576,8 +576,8 @@ value *N2Util::getHostStats (const string &id)
 	}
 	catch (exception e)
 	{
-		log::write (log::error, "Exception running hstat: %s"
-									%format (e.description));
+		log::write (log::error, "n2util", "Exception running hstat: %s"
+											%format (e.description));
 	}
 	
 	res.fromxml (resxml, schema);
