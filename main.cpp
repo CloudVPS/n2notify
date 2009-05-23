@@ -563,16 +563,25 @@ value *N2Util::getHostStats (const string &id)
 	schema.schema = schemaxml;
 	
 	string cmd = "/usr/bin/n2hstat -x %s" %format (id);
-	systemprocess P(cmd);
-	P.run ();
-	while (! P.eof())
+	try
 	{
-		resxml.strcat (P.read (4096));
+		systemprocess P(cmd);
+		P.run ();
+		while (! P.eof())
+		{
+			resxml.strcat (P.read (4096));
+		}
+		P.close ();
+		P.serialize ();
 	}
-	P.close ();
-	P.serialize ();
+	catch (exception e)
+	{
+		log::write (log::error, "Exception running hstat: %s"
+									%format (e.description));
+	}
 	
 	res.fromxml (resxml, schema);
+	log::write (log::info, "n2util", "Stats gathered");
 	
 	string debugfn = "debug-%s.xml" %format (id);
 	res.savexml (debugfn);
