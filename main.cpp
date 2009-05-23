@@ -29,8 +29,8 @@ n2notifydApp::~n2notifydApp (void)
 int n2notifydApp::main (void)
 {
 	string conferr; ///< Error return from configuration class.
-	string confpath = "/etc/n2/n2notify.conf";
-	if (! fs.exists (confpath)) confpath = "n2notify.conf";
+	string confpath = "/etc/n2/n2notifyd.conf";
+	if (! fs.exists (confpath)) confpath = "n2notifyd.conf";
 	
 	if (! conf.loadini (confpath, conferr))
 	{
