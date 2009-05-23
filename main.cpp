@@ -598,11 +598,16 @@ string *N2Util::resolveLabel (const statstring &id)
 	
 	file f("/var/state/n2/n2labels");
 	value slabels;
-	foreach (line,f)
+	
+	while (!f.eof())
 	{
+		string line = f.gets();
+		if (! line) continue;
 		value v = strutil::split (line, ':');
+		if (v.count() != 2) continue;
 		slabels[v[1].sval()] = v[0];
 	}
+	f.close ();
 	
 	if (slabels.exists (id))
 	{
