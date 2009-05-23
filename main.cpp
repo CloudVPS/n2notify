@@ -500,6 +500,8 @@ bool MailtoProtocol::sendNotification (const string &url,
 		into["restwidth"] = 100 - cpu;
 	}
 	
+	timestamp tnow = core.time.now ();
+	senv["date"] = tnow.format ("%Y-%m-%d %H:%M");
 	senv["numproblems"] = numproblems;
 	senv["numrecoveries"] = numrecoveries;
 	senv["mailto"] = addr;
