@@ -527,6 +527,8 @@ value *N2Util::getHostStats (const string &id)
 	xmlschema schema;
 	string resxml;
 	
+	schemaxml.savexml ("debug-schema.xml");
+	
 	log::write (log::info, "n2util", "Getting hstat for <%s>" %format (id));
 	schema.schema = schemaxml;
 	
