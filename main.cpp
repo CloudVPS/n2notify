@@ -32,7 +32,11 @@ int n2notifydApp::main (void)
 	daemonize ();
 	
 	log::write (log::info, "main", "Started");
-	srv.listento ("/var/state/n2/notify.socket");
+	
+	string sockpath = "/var/state/n2/notify.socket";
+	
+	fs.rm (sockpath);
+	srv.listento (sockpath);
 	new NotifyHandler (this);
 	srv.start ();
 	notificationThread.spawn ();
@@ -523,6 +527,7 @@ value *N2Util::getHostStats (const string &id)
 	xmlschema schema;
 	string resxml;
 	
+	log::write (log::info, "n2util", "Getting hstat for <%s>" %format (id));
 	schema.schema = schemaxml;
 	
 	string cmd = "/usr/bin/n2hstat -x %s" %format (id);
@@ -536,5 +541,8 @@ value *N2Util::getHostStats (const string &id)
 	P.serialize ();
 	
 	res.fromxml (resxml, schema);
+	
+	string debugfn = "debug-%s.xml" %format (id);
+	res.savexml (debugfn);
 	return &res;
 }
