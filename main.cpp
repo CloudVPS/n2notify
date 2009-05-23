@@ -494,6 +494,19 @@ bool MailtoProtocol::sendNotification (const string &url,
 			}
 		}
 		
+		value flags;
+		foreach (fl, hstat["flags"])
+		{
+			if ((fl == 1) && (fl.id() == "other"))
+			{
+				flags.newval = fl.id();
+			}
+		}
+
+		if (flags.count())
+		{
+			into["flags"] = "(%s)" %format (flags.join (","));
+		}
 		int cpu = hstat["cpu"];
 		if (cpu<0) cpu = 0;
 		if (cpu>100) cpu = 100;
