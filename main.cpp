@@ -517,6 +517,8 @@ bool MailtoProtocol::sendNotification (const string &url,
 		into["label"] = N2Util::resolveLabel (p.id());
 	}
 	
+	log::write (log::info, "mailto", "Message metadata gathered");
+	
 	timestamp tnow = core.time.now ();
 	senv["date"] = tnow.format ("%Y-%m-%d %H:%M");
 	senv["numproblems"] = numproblems;
@@ -530,6 +532,9 @@ bool MailtoProtocol::sendNotification (const string &url,
 	
 	string message;
 	scr.run (senv, message, "main");
+	
+	log::write (log::info, "mailto", "Script ran output=%i"
+								%format (message.strlen()));
 	
 	fs.save ("message.dat", message);
 	
@@ -582,15 +587,14 @@ value *N2Util::getHostStats (const string &id)
 	
 	res.fromxml (resxml, schema);
 	log::write (log::info, "n2util", "Stats gathered");
-	
-	string debugfn = "debug-%s.xml" %format (id);
-	res.savexml (debugfn);
 	return &res;
 }
 
 string *N2Util::resolveLabel (const statstring &id)
 {
 	returnclass (string) res retain;
+	
+	log::write (log::info, "n2util", "Resolving <%s>" %format (id));
 	
 	file f("/var/state/n2/n2labels");
 	value slabels;
