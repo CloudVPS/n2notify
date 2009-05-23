@@ -499,7 +499,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 		{
 			if ((fl == 1) && (fl.id() == "other"))
 			{
-				flags.newval = fl.id();
+				flags.newval() = fl.id();
 			}
 		}
 
