@@ -20,7 +20,7 @@ public:
 		v.loadxml ("n2host.schema.xml", schema);
 		string code = "#include <grace/value.h>\n"
 					  "#include \"n2notifyd.h\"\n"
-					  "value *N2Util::getSchemaXML (void) {\n";
+					  "value *N2Util::getSchemaXML (void) {\n"
 					  "  return ";
 		code.strcat (v.tograce());
 		code.strcat ("\n}\n");
