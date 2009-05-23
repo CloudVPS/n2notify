@@ -497,7 +497,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 		value flags;
 		foreach (fl, hstat["flags"])
 		{
-			if ((fl == 1) && (fl.id() == "other"))
+			if ((fl == 1) && (fl.id() != "other"))
 			{
 				flags.newval() = fl.id();
 			}
