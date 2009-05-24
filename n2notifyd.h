@@ -13,6 +13,11 @@ enum NotificationType {
 	NOTIFY_RECOVERY
 };
 
+//  -------------------------------------------------------------------------
+/// Implementation template for application config.
+//  -------------------------------------------------------------------------
+typedef configdb<class n2notifydApp> AppConfig;
+
 class Dispatcher;
 
 //  -------------------------------------------------------------------------
@@ -85,9 +90,7 @@ public:
 						 /// \param mn The message's source name.
 						 /// \param sm The smtp host to use
 						 MailtoProtocol (Dispatcher &d,
-						 				 const string &mf,
-						 				 const string &mn,
-						 				 const string &sm);
+						 				 AppConfig &c);
 						 
 						 /// Destructor.
 						~MailtoProtocol (void);
@@ -111,6 +114,7 @@ protected:
 	string				_mailfrom; ///< Envelope and header from-address
 	string				_mailname; ///< Name for rfc822 From header.
 	string				_smtphost; ///< Outbound SMTP host.
+	AppConfig			&conf;
 };
 
 //  -------------------------------------------------------------------------
@@ -151,11 +155,6 @@ public:
 	
 	Dispatcher			 dispatch;
 };
-
-//  -------------------------------------------------------------------------
-/// Implementation template for application config.
-//  -------------------------------------------------------------------------
-typedef configdb<class n2notifydApp> AppConfig;
 
 //  -------------------------------------------------------------------------
 /// Main daemon class.

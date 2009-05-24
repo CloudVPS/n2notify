@@ -234,9 +234,7 @@ NotificationThread::NotificationThread (n2notifydApp *app)
 	: thread ("notification")
 {
 	app->conf["system"].savexml ("system.xml");
-	new MailtoProtocol (dispatch, app->conf["system"]["mailfrom"],
-						app->conf["system"]["mailname"],
-						app->conf["system"]["smtphost"]);
+	new MailtoProtocol (dispatch, app->conf["system"]["mailfrom"], app->conf);
 }
 
 // ==========================================================================
@@ -435,12 +433,8 @@ bool Dispatcher::sendNotification (const string &url, const value &problems)
 // ==========================================================================
 // CONSTRUCTOR MailtoProtocol
 // ==========================================================================
-MailtoProtocol::MailtoProtocol (Dispatcher &d, const string &mf,
-								const string &mn, const string &sm)
-	: NotificationProtocol (d),
-	  _mailfrom (mf),
-	  _mailname (mn),
-	  _smtphost (sm)
+MailtoProtocol::MailtoProtocol (Dispatcher &d, AppConfig &c)
+	: NotificationProtocol (d), conf (c)
 {
 	dispatch.protocols.set ("mailto", this);
 }
@@ -564,8 +558,8 @@ bool MailtoProtocol::sendNotification (const string &url,
 	
 	// Mail the message
 	smtpsocket smtp;
-	smtp.setsmtphost (_smtphost);
-	smtp.setsender (_mailfrom, _mailname);
+	smtp.setsmtphost (conf["system"]["smtphost"]);
+	smtp.setsender (conf["system"]["mailfrom"], conf["system"]["mailname"]);
 	smtp.setheader ("MIME-Version", "1.0");
 	smtp.setheader ("Content-type", "multipart/related; boundary=\"%s\""
 					%format (senv["mimefield"]));
@@ -576,7 +570,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 	{
 		log::write (log::error, "mailto",
 					"Error sending mail through %s: %s"
-					%format (_smtphost, smtp.error()));
+					%format (conf["system"]["smtphost"], smtp.error()));
 		return false;
 	}
 	return true;
