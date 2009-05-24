@@ -233,8 +233,7 @@ value *NotificationTarget::harvestChanges (void)
 NotificationThread::NotificationThread (n2notifydApp *app)
 	: thread ("notification")
 {
-	app->conf["system"].savexml ("system.xml");
-	new MailtoProtocol (dispatch, app->conf["system"]["mailfrom"], app->conf);
+	new MailtoProtocol (dispatch, app->conf);
 }
 
 // ==========================================================================
