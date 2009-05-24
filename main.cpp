@@ -39,7 +39,7 @@ int n2notifydApp::main (void)
 	}
 	
 	addlogtarget (log::file, conf["system"]["eventlog"], log::all);
-
+	
 	string sockpath = "/var/state/n2/notify.socket";
 	fs.rm (sockpath);
 	srv.listento (sockpath);
@@ -49,17 +49,16 @@ int n2notifydApp::main (void)
 	
 	log::write (log::info, "main", "Started");
 	
-	
 	new NotifyHandler (this);
 	srv.start ();
 	notificationThread.spawn ();
-
+	
 	while (true)
 	{
 		value ev = waitevent ();
 		if (ev.type() == "shutdown") break;
 	}
-
+	
 	log::write (log::info, "main", "Shutting down");
 	stoplog();
 	exit (0);
@@ -562,8 +561,6 @@ bool MailtoProtocol::sendNotification (const string &url,
 	string message;
 	scr.run (senv, message, "main");
 	
-	// Create the subject	
-	
 	// Mail the message
 	smtpsocket smtp;
 	smtp.setsmtphost (_smtphost);
@@ -577,8 +574,11 @@ bool MailtoProtocol::sendNotification (const string &url,
 	if (! smtp.sendmessage (addr, senv["subject"], message))
 	{
 		log::write (log::error, "mailto",
-					"Error sending mail: %s" %format (smtp.error()));
+					"Error sending mail through %s: %s"
+					%format (_smtphost, smtp.error()));
+		return false;
 	}
+	return true;
 }
 
 // ==========================================================================
@@ -669,6 +669,8 @@ string *N2Util::resolveLabel (const statstring &id)
 	}
 	catch (exception e)
 	{
+		log::write (log::error, "n2util",
+					"Exception calling n2resolve: %s" %format (e.description));
 	}
 	
 	// If nothing came out, fall back to echoing the address.
