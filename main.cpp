@@ -494,7 +494,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 	
 	if (fs.exists ("/etc/n2/mailmessage.tmpl"))
 	{
-		tmpl = fs.load ("mailmessage.tmpl");
+		tmpl = fs.load ("/etc/n2/mailmessage.tmpl");
 	}
 	else if (fs.exists ("/etc/n2/mailmessage-default.tmpl"))
 	{
@@ -504,6 +504,8 @@ bool MailtoProtocol::sendNotification (const string &url,
 	{
 		tmpl = fs.load ("mailmessage.tmpl");
 	}
+	
+	scr.build (tmpl);
 	
 	int numproblems = 0;
 	int numrecoveries = 0;
