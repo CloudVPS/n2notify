@@ -66,37 +66,6 @@ int n2notifydApp::main (void)
 }
 
 // ==========================================================================
-// METHOD n2notifydApp::confLog
-// ==========================================================================
-bool n2notifydApp::confLog (config::action act, keypath &kp,
-							  const value &nval, const value &oval)
-{
-	string tstr;
-	
-	switch (act)
-	{
-		case config::isvalid:
-			// Check if the path for the event log exists.
-			tstr = strutil::makepath (nval.sval());
-			if (! tstr.strlen()) return true;
-			if (! fs.exists (tstr))
-			{
-				ferr.writeln ("%% Log path %s does not exist" %format (tstr));
-				return false;
-			}
-			return true;
-			
-		case config::create:
-			// Set the event log target and daemonize.
-			fout.writeln ("%% Event log: %s\n" %format (nval));
-			addlogtarget (log::file, nval.sval(), log::all, 1024*1024);
-			return true;
-	}
-	
-	return false;
-}
-
-// ==========================================================================
 // CONSTRUCTOR NotificationItem
 // ==========================================================================
 NotificationItem::NotificationItem (class NotificationTarget *p,
@@ -484,33 +453,12 @@ MailtoProtocol::~MailtoProtocol (void)
 }
 
 // ==========================================================================
-// METHOD MailtoProtocol::sendNotification
+// METHOD MailtoProtocol::createScriptEnvironment
 // ==========================================================================
-bool MailtoProtocol::sendNotification (const string &url,
-									 const value &problems)
+value *MailtoProtocol::createScriptEnvironment (const string &addr,
+												const value &problems)
 {
-	string addr=url.copyafter(':');
-	scriptparser scr;
-	string tmpl;
-	scr.build (tmpl);
-	value senv;
-	value hstat;
-	
-	if (fs.exists ("/etc/n2/mailmessage.tmpl"))
-	{
-		tmpl = fs.load ("/etc/n2/mailmessage.tmpl");
-	}
-	else if (fs.exists ("/etc/n2/mailmessage-default.tmpl"))
-	{
-		tmpl = fs.load ("/etc/n2/mailmessage-default.tmpl");
-	}
-	else if (fs.exists ("mailmessage.tmpl"))
-	{
-		tmpl = fs.load ("mailmessage.tmpl");
-	}
-	
-	scr.build (tmpl);
-	
+	returnclass (value) senv retain;
 	int numproblems = 0;
 	int numrecoveries = 0;
 	
@@ -524,7 +472,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 		value &into = senv["problems"][p.id()];
 		
 		// Call n2hstat
-		hstat = N2Util::getHostStats (p.id());
+		value hstat = N2Util::getHostStats (p.id());
 		
 		// Copy all non-array values
 		foreach (v, hstat)
@@ -575,15 +523,46 @@ bool MailtoProtocol::sendNotification (const string &url,
 	mimefield = "=_%s" %format (mimefield);
 	senv["mimefield"] = mimefield;
 	
+	string subject = "[N2]";
+	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
+	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
+	subject.strcat (" <%s>" %format (senv["date"]));
+	senv["subject"] = subject;
+
+	return &senv;
+}
+
+// ==========================================================================
+// METHOD MailtoProtocol::sendNotification
+// ==========================================================================
+bool MailtoProtocol::sendNotification (const string &url,
+									 const value &problems)
+{
+	scriptparser scr;
+	string tmpl;
+	string addr = url.copyafter(':');
+
+	value tmplfiles = $("/etc/n2/mailmessage.tmpl") ->
+					  $("/etc/n2/mailmessage-default.tmpl") ->
+					  $("mailmessage.tmpl");
+					  
+	foreach (tmplf, tmplfiles)
+	{
+		if (fs.exists (tmplf))
+		{
+			tmpl = fs.load (tmplf);
+			break;
+		}
+	}
+	
+	scr.build (tmpl);
+	value senv = createScriptEnvironment (addr, problems);
+	
 	// Generate the mail message from the template.
 	string message;
 	scr.run (senv, message, "main");
 	
 	// Create the subject	
-	string subject = "[N2]";
-	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
-	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
-	subject.strcat (" <%s>" %format (senv["date"]));
 	
 	// Mail the message
 	smtpsocket smtp;
@@ -591,11 +570,11 @@ bool MailtoProtocol::sendNotification (const string &url,
 	smtp.setsender (_mailfrom, _mailname);
 	smtp.setheader ("MIME-Version", "1.0");
 	smtp.setheader ("Content-type", "multipart/related; boundary=\"%s\""
-					%format (mimefield));
+					%format (senv["mimefield"]));
 	
 	log::write (log::info, "mailto", "Sending mail to <%s>" %format (addr));
 	
-	if (! smtp.sendmessage (addr, subject, message))
+	if (! smtp.sendmessage (addr, senv["subject"], message))
 	{
 		log::write (log::error, "mailto",
 					"Error sending mail: %s" %format (smtp.error()));
@@ -644,12 +623,15 @@ value *N2Util::getHostStats (const string &id)
 string *N2Util::resolveLabel (const statstring &id)
 {
 	returnclass (string) res retain;
-	
-	log::write (log::info, "n2util", "Resolving <%s>" %format (id));
-	
+
+	// First check the n2labels file	
 	file f("/var/state/n2/n2labels");
 	value slabels;
 	
+	// Get the entries and put them in the dictionary. Yes this is
+	// inefficient, we can switch to a cached list like n2view here,
+	// but the number of lookups is not going to be big enough right
+	// now for this to be an immediate issue.
 	while (!f.eof())
 	{
 		string line = f.gets();
@@ -660,18 +642,22 @@ string *N2Util::resolveLabel (const statstring &id)
 	}
 	f.close ();
 	
+	// Simply look up the label
 	if (slabels.exists (id))
 	{
 		res = slabels[id];
 		return &res;
 	}
 	
+	// Ok, plan B. Is there an n2resolve binary?
 	if (! fs.exists ("/usr/bin/n2resolve"))
 	{
+		// Sadly, no. We'll have to keep with the untranslated address.
 		res = id;
 		return &res;
 	}
 	
+	// Get the juice out of n2resolve.
 	string cmd = "/usr/bin/n2resolve %s" %format (id);
 	try
 	{
@@ -685,6 +671,7 @@ string *N2Util::resolveLabel (const statstring &id)
 	{
 	}
 	
+	// If nothing came out, fall back to echoing the address.
 	if (! res) res = id;
 	return &res;
 }

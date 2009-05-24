@@ -91,7 +91,18 @@ public:
 						 
 						 /// Destructor.
 						~MailtoProtocol (void);
-						
+	
+						 /// Gathers information for the mail template
+						 /// from a list of hosts.
+						 /// \param addr The email recipient.
+						 /// \param problems Dictionary of hosts,
+						 ///                 keyed by their address.
+						 ///                 Value is either PROBLEM
+						 ///                 or RECOVERY.
+	value				*createScriptEnvironment (const string &addr,
+												  const value &problems);
+												  
+	
 						 /// Implementation.
 	bool				 sendNotification (const string &url,
 						 				   const value &problems);
@@ -108,10 +119,32 @@ protected:
 class NotificationThread : public thread
 {
 public:
-						 NotificationThread (class n2notifydApp *);
+						 /// Constructor.
+						 /// \param app The application object. This is
+						 ///            used to get the configuration
+						 ///            parameters for initializing
+						 ///            the protocol handlers.
+						 NotificationThread (class n2notifydApp *app);
 						~NotificationThread (void);
 						
+						 /// Thread implementation. Waits for
+						 /// statuschange events, which contain the
+						 /// following sub-keys:
+						 /// - target: The notification target url.
+						 /// - objectid: The host address.
+						 /// - state: Either PROBLEM or RECOVERY.
+						 /// At least every 15 seconds this thread
+						 /// will loop over all the targets and
+						 /// runs NotificationTarget::harvestChanges()
+						 /// to get any outstanding notifications and
+						 /// sends them to the Dispatcher.
 	void				 run (void);
+	
+						 /// Access method for other threads to send
+						 /// a notification status change event.
+						 /// \param target The notification target url.
+						 /// \param objectid The host address.
+						 /// \param t The change type.
 	void				 statusChange (const statstring &target,
 									   const statstring &objectd,
 									   NotificationType t);
@@ -137,10 +170,6 @@ public:
 	httpd				 srv;
 	AppConfig			 conf;
 	NotificationThread	 notificationThread;
-
-protected:
-	bool				 confLog (config::action act, keypath &path,
-								  const value &nval, const value &oval);
 };
 
 $exception (defaultConstructorException, "Default constructor");
@@ -178,17 +207,26 @@ public:
 						 /// \param t New property value.
 	void				 sent (bool t);
 	
+						 /// Check whether this item is due to be sent
+						 /// at the current time.
 	bool				 isDue (int duetime = NOTIFICATION_THRESHOLD);
+	
+						 /// Check whether this item is due to be sent
+						 /// regardless of any other outstanding states.
 	bool				 isOverDue (void);
 	
+						 /// Get the host's status.
 	NotificationType	 status (void);
+	
+						 /// Set a new status. This will invert the
+						 /// sent property.
 	void				 status (NotificationType t);
 	
 protected:
-	timestamp			 _lastchange;
-	bool				 _sent;
-	NotificationType	 _status;
-	statstring			 _id;
+	timestamp			 _lastchange; ///< Time of last state change.
+	bool				 _sent; ///< True if notification has been sent.
+	NotificationType	 _status; ///< Current status.
+	statstring			 _id; ///< Host address.
 };
 
 typedef dictionary<NotificationItem> NotificationItemDict;
