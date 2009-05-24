@@ -266,7 +266,8 @@ NotificationThread::NotificationThread (n2notifydApp *app)
 	: thread ("notification")
 {
 	new MailtoProtocol (dispatch, app->conf["system"]["mailfrom"],
-						app->conf["system"]["mailname"]);
+						app->conf["system"]["mailname"],
+						app->conf["system"]["smtphost"]);
 }
 
 // ==========================================================================
@@ -466,8 +467,11 @@ bool Dispatcher::sendNotification (const string &url, const value &problems)
 // CONSTRUCTOR MailtoProtocol
 // ==========================================================================
 MailtoProtocol::MailtoProtocol (Dispatcher &d, const string &mf,
-								const string &mn)
-	: NotificationProtocol (d), _mailfrom (mf), _mailname (mn)
+								const string &mn, const string &sm)
+	: NotificationProtocol (d),
+	  _mailfrom (mf),
+	  _mailname (mn),
+	  _smtphost (sm)
 {
 	dispatch.protocols.set ("mailto", this);
 }
@@ -583,8 +587,8 @@ bool MailtoProtocol::sendNotification (const string &url,
 	
 	// Mail the message
 	smtpsocket smtp;
-	smtp.setsmtphost ("localhost");
-	smtp.setsender ("support@xlshosting.com", "N2 Monitoring");
+	smtp.setsmtphost (_smtphost);
+	smtp.setsender (_mailfrom, _mailname);
 	smtp.setheader ("MIME-Version", "1.0");
 	smtp.setheader ("Content-type", "multipart/related; boundary=\"%s\""
 					%format (mimefield));

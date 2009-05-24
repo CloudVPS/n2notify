@@ -6,7 +6,7 @@
 
 // The amount of seconds notfication states should be stable before
 // anything is sent out.
-#define NOTIFICATION_THRESHOLD 91
+#define NOTIFICATION_THRESHOLD 127
 
 enum NotificationType {
 	NOTIFY_PROBLEM,
@@ -83,8 +83,11 @@ public:
 						 /// \param d Parent dispatcher
 						 /// \param mf The message's source email address.
 						 /// \param mn The message's source name.
-						 MailtoProtocol (Dispatcher &d, const string &mf,
-						 				 const string &mn);
+						 /// \param sm The smtp host to use
+						 MailtoProtocol (Dispatcher &d,
+						 				 const string &mf,
+						 				 const string &mn,
+						 				 const string &sm);
 						 
 						 /// Destructor.
 						~MailtoProtocol (void);
@@ -94,8 +97,9 @@ public:
 						 				   const value &problems);
 
 protected:
-	string				_mailfrom;
-	string				_mailname;
+	string				_mailfrom; ///< Envelope and header from-address
+	string				_mailname; ///< Name for rfc822 From header.
+	string				_smtphost; ///< Outbound SMTP host.
 };
 
 //  -------------------------------------------------------------------------
