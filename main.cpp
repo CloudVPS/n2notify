@@ -529,7 +529,7 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 // METHOD MailtoProtocol::sendNotification
 // ==========================================================================
 bool MailtoProtocol::sendNotification (const string &url,
-									 const value &problems)
+									   const value &problems)
 {
 	scriptparser scr;
 	string tmpl;
@@ -559,6 +559,7 @@ bool MailtoProtocol::sendNotification (const string &url,
 	smtpsocket smtp;
 	smtp.setsmtphost (conf["system"]["smtphost"]);
 	smtp.setsender (conf["system"]["mailfrom"], conf["system"]["mailname"]);
+	smtp.setheader ("User-Agent", "N2notify/1");
 	smtp.setheader ("MIME-Version", "1.0");
 	smtp.setheader ("Content-type", "multipart/related; boundary=\"%s\""
 					%format (senv["mimefield"]));

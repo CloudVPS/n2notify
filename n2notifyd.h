@@ -6,7 +6,7 @@
 
 // The amount of seconds notfication states should be stable before
 // anything is sent out.
-#define NOTIFICATION_THRESHOLD 158
+#define NOTIFICATION_THRESHOLD 208
 
 enum NotificationType {
 	NOTIFY_PROBLEM,
@@ -111,9 +111,6 @@ public:
 						 				   const value &problems);
 
 protected:
-	string				_mailfrom; ///< Envelope and header from-address
-	string				_mailname; ///< Name for rfc822 From header.
-	string				_smtphost; ///< Outbound SMTP host.
 	AppConfig			&conf;
 };
 
