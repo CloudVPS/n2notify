@@ -1,7 +1,8 @@
 #!/bin/sh
 . configure.paths
 
-install -m 755 n2notify $CONFIG_BINPATH/n2notify
+install -m 755 n2notifyd $CONFIG_BINPATH/../sbin/n2notifyd
+install -m 755 n2event $CONFIG_BINPATH/n2event
 
 if [ `whoami` = "root" ]; then
   etcpath=/etc
