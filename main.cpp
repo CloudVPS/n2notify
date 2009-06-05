@@ -455,11 +455,21 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 	int numproblems = 0;
 	int numrecoveries = 0;
 	
+	value problemlist, recoverylist;
+	
 	// go over the reported events
 	foreach (p, problems)
 	{
-		if (p.sval() == "PROBLEM") numproblems++;
-		else numrecoveries++;
+		if (p.sval() == "PROBLEM")
+		{
+			numproblems++;
+			problemlist.newval() = p.id();
+		}
+		else
+		{
+			numrecoveries++;
+			recoverylist.newval() = p.id();
+		}
 		
 		// Reference to the insertion point
 		value &into = senv["problems"][p.id()];
@@ -510,6 +520,28 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 	senv["numrecoveries"] = numrecoveries;
 	senv["mailto"] = addr;
 	
+	string subprob, subrec;
+	
+	if (numproblems>0 && (numproblems+numrecoveries)<4)
+	{
+		subprob = "PROBLEM:";
+		subprob.strcat (problemlist.join (","));
+	}
+	else
+	{
+		if (numproblems) subprob = "PROBLEM:%i" %format (numproblems);
+	}
+	if (numrecoveries>0 && (numproblems+numrecoveries)<4)
+	{
+		subrec = "RECOVERY:";
+		subrec.strcat (recoverylist.join (","));
+	}
+	else
+	{
+		if (numrecoveries) subrec = "RECOVERY:%i" %format (numrecoveries);
+	}
+	
+
 	// Create the mime-separator
 	string mimefield = strutil::uuid();
 	mimefield = mimefield.filter ("0123456789abcdef");
@@ -517,8 +549,8 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 	senv["mimefield"] = mimefield;
 	
 	string subject = "[N2]";
-	if (numproblems) subject.strcat (" PROBLEM:%i" %format (numproblems));
-	if (numrecoveries) subject.strcat (" RECOVERY:%i" %format (numrecoveries));
+	if (subprob) subject.strcat (" %s" %format (subprob));
+	if (subrec) subject.strcat (" %s" %format (subrec));
 	subject.strcat (" <%s>" %format (senv["date"]));
 	senv["subject"] = subject;
 
