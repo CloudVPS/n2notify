@@ -455,20 +455,27 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 	int numproblems = 0;
 	int numrecoveries = 0;
 	
+	// We'll use this to build up the hosts in the subject if there
+	// are not too many changes.
 	value problemlist, recoverylist;
 	
 	// go over the reported events
 	foreach (p, problems)
 	{
+		// Resolve the host label
+		string label;
+		label = N2Util::resolveLabel (p.id());
+
+		// Add it to the relevant section of santa's book
 		if (p.sval() == "PROBLEM")
 		{
 			numproblems++;
-			problemlist.newval() = p.id();
+			problemlist.newval() = label;
 		}
 		else
 		{
 			numrecoveries++;
-			recoverylist.newval() = p.id();
+			recoverylist.newval() = label;
 		}
 		
 		// Reference to the insertion point
@@ -508,9 +515,6 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 		if (cpu>100) cpu = 100;
 		into["cpuwidth"] = cpu;
 		into["restwidth"] = 100 - cpu;
-		
-		// Resolve the host label
-		into["label"] = N2Util::resolveLabel (p.id());
 	}
 	
 	// Some extra parameters
