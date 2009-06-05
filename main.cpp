@@ -465,6 +465,7 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 		// Resolve the host label
 		string label;
 		label = N2Util::resolveLabel (p.id());
+		into["label"] = label;
 
 		// Add it to the relevant section of santa's book
 		if (p.sval() == "PROBLEM")
