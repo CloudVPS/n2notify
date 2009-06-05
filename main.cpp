@@ -462,6 +462,9 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 	// go over the reported events
 	foreach (p, problems)
 	{
+		// Reference to the insertion point
+		value &into = senv["problems"][p.id()];
+		
 		// Resolve the host label
 		string label;
 		label = N2Util::resolveLabel (p.id());
@@ -478,9 +481,6 @@ value *MailtoProtocol::createScriptEnvironment (const string &addr,
 			numrecoveries++;
 			recoverylist.newval() = label;
 		}
-		
-		// Reference to the insertion point
-		value &into = senv["problems"][p.id()];
 		
 		// Call n2hstat
 		value hstat = N2Util::getHostStats (p.id());
