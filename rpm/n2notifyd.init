@@ -1,0 +1,111 @@
+#!/bin/bash
+#
+# chkconfig: 2345 92 24
+# description: n2notifyd
+#
+# processname: n2notifyd
+# pidfile: /var/run/n2notifyd.pid
+
+# Source function library
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+[ -r /etc/sysconfig/network ] && . /etc/sysconfig/network
+
+[ -n "$ROOTDIR" ] && ROOTDIR=`echo $ROOTDIR | sed 's#//*#/#g;s#/$##'`
+
+RETVAL=0
+prog="n2notifyd"
+
+# Check that networking is up.
+[ "${NETWORKING}" = "no" ] && exit 1
+
+DAEMON=/usr/sbin/n2notifyd
+NAME=net.xl-is.svc.n2notifyd
+
+# Check if executable exists
+test -x $DAEMON || exit 0
+
+start() {
+	echo -n $"Starting $prog: "
+	if [ -f /var/run/${NAME}.pid ]; then
+	  if kill -0 `cat /var/run/${NAME}.pid` 2>/dev/null; then
+		echo -n $"$prog: already running"
+		failure
+		echo
+		return 1
+	  fi
+	fi
+	daemon $DAEMON || {
+	  failure
+	  echo
+	  return 1
+	}
+	success
+	echo
+}
+
+
+stop() {
+	echo -n $"Stopping $prog: "
+		if [ -f /var/run/${NAME}.pid ]; then
+			if kill -TERM `cat /var/run/${NAME}.pid` 2>/dev/null; then
+				RETVAL=0
+				success
+			else
+				RETVAL=1
+				failure
+			fi
+        else
+        	RETVAL=1
+            failure
+        fi;
+        echo
+        return $RETVAL
+}
+
+
+restart () {
+	stop
+	sleep 4
+	start
+}
+
+reload () {
+	echo -n $"Reloading $prog: "
+	if [ -f /var/run/${NAME}.pid ]; then
+		if kill -HUP `cat /var/run/${NAME}.pid` 2>/dev/null; then
+			RETVAL=0
+			success
+		else
+			RETVAL=1
+			failure
+		fi
+        else
+       	    RETVAL=1
+            failure
+        fi;
+        echo
+        return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		restart
+		;;
+	reload)
+		reload
+		;;
+	*)
+	echo $"Usage: $0 {start|stop|restart}"
+	exit 1
+esac
+
+exit $?
