@@ -1,0 +1,47 @@
+#!/usr/bin/make -f
+DH_OPTIONS=-a
+
+install:
+	dh_testdir
+	dh_testroot
+	dh_installdirs
+	install -o root -g root -m 0755 n2notifyd debian/n2notify/usr/sbin/
+	install -o root -g root -m 0755 n2event debian/n2notify/usr/bin/
+	install -b -o root -g root -m 0755 debian/extra/n2notifyd.init debian/n2notify/etc/init.d/n2notifyd
+	install -b -o root -g root -m 0644 n2notifyd.conf debian/n2notify/etc/n2/n2notifyd.example.conf
+
+grace:
+	hg clone -r 0.9.30 ../grace grace
+	cd grace/src/libgrace && ../../util/mkversion version.cpp
+	rm -rf grace/.hg
+
+grace/lib/libgrace.a: grace
+	cd grace/src/libgrace && ./configure && make && ar cr ../../lib/libgrace.a application.o atoll.o cgi.o checksum.o cmdtoken.o commonkeys.o configdb.o currency.o daemon.o defaults.o dictionary.o eventq.o file.o filesystem.o fswatch.o http.o httpd.o httpd_fileshare.o lock.o md5.o netdb.o process.o reg.o regexpression.o retain.o ringbuffer.o session.o smtp.o smtpd.o socketpool.o statstring.o stringdict.o str.o strutil.o system.o terminal.o tcpsocket.o thread.o timeofday.o timestamp.o tolower.o udpsocket.o valuable.o value.o value_ascii.o value_ini.o value_ip.o value_grace.o value_json.o value_php.o value_plist.o value_sort.o value_strformat.o value_xml.o value_csv.o value_cxml.o value_shox.o version.o xmlschema_root.o xmlschema_base.o xmlschema_misc.o xmlschema.o validator.o valueindex.o
+
+build: grace/lib/libgrace.a
+	GRACEINC=grace/include LIBGRACE=grace/lib/libgrace.a ./configure
+	make n2notifyd n2event
+
+binary-indep:
+
+binary-arch binary: build install
+	#if [ -d debian/tmp ] ; then dh_install -a --sourcedir=debian/tmp ; fi
+	dh_installdocs -a
+	dh_installdeb -a
+	dh_compress -a
+	dh_fixperms -a
+	dh_shlibdeps -a
+	dh_gencontrol -a
+	dh_md5sums -a
+	dh_builddeb -a
+
+clean:
+	dh_clean
+
+debsrc: clean
+	debian/rules clean
+	rm -rf grace
+	debian/rules grace
+	dpkg-buildpackage -S
+
+.PHONY: build binary binary-arch binary-indep clean install
