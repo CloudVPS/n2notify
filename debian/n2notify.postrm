@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# see: dh_installdeb(1)
+
+set -e
+
+[ $1 = purge ] && update-rc.d n2notifyd remove > /dev/null
+#DEBHELPER#
+
+exit 0
+
+

@@ -1,0 +1,3 @@
+To turn this into a debian source package (.dsc+.tar.gz):
+- make sure ../grace is a sufficiently recent clone from http://hg.openpanel.com/grace
+- run debian/rules debsrc

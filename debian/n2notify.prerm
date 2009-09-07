@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# see: dh_installdeb(1)
+
+set -e
+
+invoke-rc.d n2notifyd stop || true
+#DEBHELPER#
+
+exit 0
+
+
