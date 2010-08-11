@@ -50,6 +50,7 @@ int n2notifydApp::main (void)
 	log::write (log::info, "main", "Started");
 	
 	new NotifyHandler (this);
+	srv.maxthreads (128);
 	srv.start ();
 	notificationThread.spawn ();
 	
