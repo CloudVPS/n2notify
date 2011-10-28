@@ -41,4 +41,4 @@ public:
 };
 
 $appobject (n2eventApp);
-$version (1.0.3);
+$version (1.0.6);

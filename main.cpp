@@ -3,7 +3,7 @@
 #include <grace/smtp.h>
 
 $appobject (n2notifydApp);
-$version (1.0.3);
+$version (1.0.6);
 
 // ==========================================================================
 // CONSTRUCTOR n2notifydApp
