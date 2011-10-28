@@ -11,7 +11,7 @@ install:
 	install -b -o root -g root -m 0644 n2notifyd.conf debian/n2notify/etc/n2/n2notifyd.example.conf
 
 grace:
-	hg clone -r 0.9.30 ../grace grace
+	hg clone -r 1.0.3 ../grace grace
 	cd grace/src/libgrace && ../../util/mkversion version.cpp
 	rm -rf grace/.hg
 
