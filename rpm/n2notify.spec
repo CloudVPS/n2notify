@@ -48,6 +48,7 @@ install -m 0755 n2event ${BUILD_ROOT}/usr/bin/
 %post
 install -d -o root -g n2 -m 0750 /etc/n2
 install -d -o n2 -g n2 -m 0750 /var/log/n2
+install -d -o n2 -g n2 -m 0750 /var/state/n2
 chkconfig --level 2345 n2notifyd on
 
 %preun
