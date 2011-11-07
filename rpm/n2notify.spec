@@ -42,6 +42,7 @@ mkdir -p ${BUILD_ROOT}/etc/init.d
 install -b -m 0755 rpm/n2notifyd.init ${BUILD_ROOT}/etc/init.d/n2notifyd
 install -d -m 0750 ${BUILD_ROOT}/etc/n2
 install -b -m 0644 n2notifyd.conf ${BUILD_ROOT}/etc/n2/n2notifyd.example.conf
+install -m 0640 mailmessage.tmpl ${BUILD_ROOT}/etc/n2/mailmessage-default.tmpl
 install -m 0755 n2notifyd ${BUILD_ROOT}/usr/sbin/
 install -m 0755 n2event ${BUILD_ROOT}/usr/bin/
 

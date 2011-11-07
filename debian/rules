@@ -7,6 +7,7 @@ install:
 	dh_installdirs
 	install -o root -g root -m 0755 n2notifyd debian/n2notify/usr/sbin/
 	install -o root -g root -m 0755 n2event debian/n2notify/usr/bin/
+	install -o root -g root -m 0640 mailmessage.tmpl debian/n2notify/etc/n2/mailmessage-default.tmpl
 	install -d -o n2 -g n2 -m 0750 debian/n2notify/var/state/n2
 	install -b -o root -g root -m 0755 debian/extra/n2notifyd.init debian/n2notify/etc/init.d/n2notifyd
 	install -b -o root -g root -m 0644 n2notifyd.conf debian/n2notify/etc/n2/n2notifyd.example.conf
