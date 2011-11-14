@@ -43,6 +43,8 @@
 	  <xml.member class="netout" id="netout" type="integer"/>
 	  <xml.member class="svcdown" id="svcdown" type="integer"/>
 	  <xml.member class="diskio" id="diskio" type="integer"/>
+	  <xml.member class="diskspace" id="diskspace" type="integer"/>
+	  <xml.member class="iowait" id="iowait" type="integer"/>
 	</xml.proplist>
   </xml.class>
   
