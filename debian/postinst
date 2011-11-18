@@ -1,0 +1,5 @@
+#!/bin/sh
+mkdir -p /var/state/n2
+chown n2 /var/state/n2
+chgrp n2 /var/state/n2
+chmod 0750 /var/state/n2
