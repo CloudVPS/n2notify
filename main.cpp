@@ -38,7 +38,7 @@ int n2notifydApp::main (void)
 		return 1;
 	}
 	
-	addlogtarget (log::file, conf["system"]["eventlog"], log::all);
+	addlogtarget (log::syslog, "n2notifyd", log::all);
 	
 	string sockpath = "/var/state/n2/notify.socket";
 	fs.rm (sockpath);
